@@ -354,3 +354,5 @@ MigrationBackup/
 *.sln.iml
 
 TrueLightBlacklistGenerator/TrueLightBlacklist.txt
+TrueLightIniGen.zip
+/TrueLightIniGenerator/build
