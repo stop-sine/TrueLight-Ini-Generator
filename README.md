@@ -1,2 +1,2 @@
-# True-Light-Blacklist-Gen
+# TrueLight-Ini-Generator
 

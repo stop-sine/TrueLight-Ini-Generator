@@ -1,3 +1,4 @@
+using System.IO;
 using Noggog;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Environments;
@@ -5,9 +6,7 @@ using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.FormKeys.SkyrimSE;
 
-
-
-namespace TrueLightBlacklistGenerator
+namespace TrueLightIniGenerator
 {
     public class Program
     {
@@ -27,10 +26,39 @@ namespace TrueLightBlacklistGenerator
         public static void Main(string[] args)
         {
             using var env = GameEnvironment.Typical.Skyrim(SkyrimRelease.SkyrimSE);
-            var cache = env.LinkCache;
+            Directory.SetCurrentDirectory(env.DataFolderPath.Path);
+            var dataPath = env.DataFolderPath.Path;
+            var iniPath = "LightPlacer\\True Light.ini";
 
-            var lights = env.LoadOrder.PriorityOrder.Light().WinningOverrides().Select(l => l.FormKey).ToList();
-            var mods = env.LoadOrder.PriorityOrder.Select(x => x.Mod).Where(x => x is not null && FilterMod(x.ModKey)).ToList();
+            var ini = new string[]
+            {
+                "[Settings]",
+                "bShowMarkers = false",
+                "",
+                "[LightWhiteList]",
+                "Window Shadows Ultimate.esp",
+                "Window Shadows Ultimate Supplement.esp",
+                "True Light - Shadows and Ambient.esp",
+                "CS Light.esp",
+                "NOTWL - Lanterns.esp",
+                ""
+            };
+
+            if (File.Exists(iniPath))
+            {
+                Console.WriteLine("True Light.ini exists, using existing settings and whitelist");
+                ini = [.. File.ReadAllLines(iniPath).TakeWhile(line => line.Trim() != "[LightBlackList]")];
+            }
+            else
+            {
+                Console.WriteLine("True Light.ini does not exist, using default settings and whitelist");
+                iniPath = "True Light.ini";
+            }
+
+            var lights = env.LoadOrder.PriorityOrder.Light().WinningOverrides().Select(l => l.FormKey);
+            var mods = env.LoadOrder.PriorityOrder.Select(x => x.Mod).Where(x => x is not null && FilterMod(x.ModKey));
+
+            Console.WriteLine("Generating blacklist...");
             var blacklist = new List<ModKey>
             {
                 Skyrim.ModKey,
@@ -55,15 +83,18 @@ namespace TrueLightBlacklistGenerator
                 }
             }
 
-            using (StreamWriter outputFile = new("TrueLightBlacklist.txt"))
-                foreach (var mod in env.LoadOrder.ListedOrder)
-                    if (blacklist.Contains(mod.ModKey))
-                        outputFile.WriteLine(mod.FileName);
-            Console.WriteLine("[LightBlackList]");
             foreach (var mod in env.LoadOrder.ListedOrder)
                 if (blacklist.Contains(mod.ModKey))
                     Console.WriteLine(mod.FileName);
-            Console.WriteLine("\nOutput written to TrueLightBlacklist.txt");
+
+            Console.WriteLine("\nWriting output...");
+            using StreamWriter outputFile = new(iniPath);
+            ini.ForEach(outputFile.WriteLine);
+            outputFile.WriteLine("[LightBlackList]");
+            foreach (var mod in env.LoadOrder.ListedOrder)
+                if (blacklist.Contains(mod.ModKey))
+                    outputFile.WriteLine(mod.FileName);
+            Console.WriteLine($"Output written to {iniPath}");
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
         }
