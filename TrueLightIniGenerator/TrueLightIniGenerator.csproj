@@ -8,7 +8,7 @@
     <SelfContained>true</SelfContained>
     <Nullable>enable</Nullable>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <PublishTrimmed>true</PublishTrimmed>
+    <trimDependencies>true</trimDependencies>
   </PropertyGroup>
 
   <ItemGroup>
